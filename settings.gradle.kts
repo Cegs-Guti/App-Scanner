@@ -19,6 +19,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "trabajo2"
+rootProject.name = "CoreScanner"
 include(":app")
  
