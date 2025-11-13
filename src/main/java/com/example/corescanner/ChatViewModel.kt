@@ -20,6 +20,7 @@ import kotlinx.coroutines.launch
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
+
 class ChatViewModel : ViewModel() {
     // Muestra progreso en la UI (barra)
     private val _isSending = mutableStateOf(false)
