@@ -22,12 +22,30 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 
 class ChatViewModel : ViewModel() {
-    // Muestra progreso en la UI (barra)
+    
     private val _isSending = mutableStateOf(false)
     val isSending = _isSending
     private val GEMINI_API_KEY = "AIzaSyCHRPkvn9jlXWU9WnFZdhOavpM7qWyRCXY"
 
+    // Ver bien el chat para implementarlo
+//private val httpClient = OkHttpClient.Builder()
+    // Tiempo máximo total de la llamada (opcional)
+  //  .callTimeout(60, TimeUnit.SECONDS)
+    // Tiempo para conectar con el servidor
+   // .connectTimeout(20, TimeUnit.SECONDS)
+    // Tiempo máximo esperando la respuesta de lectura
+  //  .readTimeout(60, TimeUnit.SECONDS)
+    // Tiempo máximo escribiendo el cuerpo de la petición
+   // .writeTimeout(60, TimeUnit.SECONDS)
+   // .build()
 
+    //reemplazar el retrofit por esto
+    //private val api = Retrofit.Builder()
+    //.baseUrl("https://generativelanguage.googleapis.com/")
+   // .client(httpClient) // <- aquí aplicas los timeouts
+   // .addConverterFactory(GsonConverterFactory.create())
+    //.build()
+   // .create(ApiService::class.java)
     private val api = Retrofit.Builder()
         .baseUrl("https://generativelanguage.googleapis.com/")
         .addConverterFactory(GsonConverterFactory.create())
