@@ -1,4 +1,3 @@
-
 package com.example.corescanner.repository
 
 import android.content.Context
@@ -6,7 +5,6 @@ import com.example.corescanner.data.ChatDao
 import com.example.corescanner.data.ChatMessage
 import com.example.corescanner.data.ChatSession
 import kotlinx.coroutines.flow.Flow
-
 
 class ChatRepository(
     val context: Context,
@@ -47,6 +45,25 @@ class ChatRepository(
             dao.updateSession(
                 it.copy(updatedAt = System.currentTimeMillis())
             )
+        }
+    }
+
+    // Renombrar SIN cambiar fecha/hora de actualización
+    suspend fun renameSession(sessionId: Long, newTitle: String) {
+        dao.getSession(sessionId)?.let { session ->
+            dao.updateSession(
+                session.copy(
+                    title = newTitle
+                    // updatedAt se mantiene igual
+                )
+            )
+        }
+    }
+
+    // Borrado múltiple de sesiones
+    suspend fun deleteSessions(ids: List<Long>) {
+        if (ids.isNotEmpty()) {
+            dao.deleteSessions(ids)
         }
     }
 

@@ -1,4 +1,3 @@
-
 package com.example.corescanner.data
 
 import android.content.Context
@@ -32,17 +31,32 @@ data class ChatMessage(
 
 @Dao
 interface ChatDao {
-    @Insert suspend fun insertSession(s: ChatSession): Long
-    @Update suspend fun updateSession(s: ChatSession)
+
+    // --- Sesiones ---
+    @Insert
+    suspend fun insertSession(s: ChatSession): Long
+
+    @Update
+    suspend fun updateSession(s: ChatSession)
+
     @Query("SELECT * FROM chat_sessions ORDER BY updatedAt DESC")
     fun observeSessions(): kotlinx.coroutines.flow.Flow<List<ChatSession>>
-    @Query("SELECT * FROM chat_sessions WHERE id=:id")
+
+    @Query("SELECT * FROM chat_sessions WHERE id = :id")
     suspend fun getSession(id: Long): ChatSession?
 
-    @Insert suspend fun insertMessage(m: ChatMessage): Long
-    @Query("SELECT * FROM chat_messages WHERE sessionId=:sessionId ORDER BY createdAt ASC")
+    // BORRADO MÚLTIPLE DE SESIONES
+    @Query("DELETE FROM chat_sessions WHERE id IN (:ids)")
+    suspend fun deleteSessions(ids: List<Long>)
+
+    // --- Mensajes ---
+    @Insert
+    suspend fun insertMessage(m: ChatMessage): Long
+
+    @Query("SELECT * FROM chat_messages WHERE sessionId = :sessionId ORDER BY createdAt ASC")
     fun observeMessages(sessionId: Long): kotlinx.coroutines.flow.Flow<List<ChatMessage>>
-    @Query("SELECT text FROM chat_messages WHERE sessionId=:sessionId ORDER BY createdAt ASC LIMIT 1")
+
+    @Query("SELECT text FROM chat_messages WHERE sessionId = :sessionId ORDER BY createdAt ASC LIMIT 1")
     suspend fun firstMessageText(sessionId: Long): String?
 }
 
@@ -51,7 +65,9 @@ abstract class ChatDb : RoomDatabase() {
     abstract fun chatDao(): ChatDao
 
     companion object {
-        @Volatile private var INSTANCE: ChatDb? = null
+        @Volatile
+        private var INSTANCE: ChatDb? = null
+
         fun get(context: Context): ChatDb =
             INSTANCE ?: synchronized(this) {
                 INSTANCE ?: Room.databaseBuilder(
@@ -62,4 +78,3 @@ abstract class ChatDb : RoomDatabase() {
             }
     }
 }
-

@@ -14,7 +14,6 @@ import kotlinx.coroutines.launch
 @Composable
 fun HomeScreen(
     repository: ChatRepository,
-    vm: ChatViewModel,
     onGoHistory: () -> Unit,
     onGoNewChat: (Long) -> Unit
 ) {
@@ -36,7 +35,6 @@ fun HomeScreen(
             Button(
                 onClick = {
                     scope.launch {
-                        vm.resetLastImage()
                         val id = repository.newSession("Nueva conversación")
                         onGoNewChat(id)
                     }

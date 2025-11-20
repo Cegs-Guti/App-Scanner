@@ -9,12 +9,9 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import androidx.lifecycle.viewmodel.compose.viewModel
-
 import com.example.corescanner.data.ChatDb
 import com.example.corescanner.repository.ChatRepository
 import com.example.corescanner.ui.ChatScreen
-import com.example.corescanner.ui.ContinueChatScreen
 import com.example.corescanner.ui.HistoryScreen
 import com.example.corescanner.ui.HomeScreen
 import com.example.corescanner.ui.theme.CoreScannerTheme
@@ -32,43 +29,27 @@ class MainActivity : ComponentActivity() {
                     )
                 }
 
-                val vm: ChatViewModel = viewModel()
-
                 NavHost(navController = nav, startDestination = "home") {
+
                     composable("home") {
                         HomeScreen(
                             repository = repo,
-                            vm = vm,   // ✅ se lo pasamos al Home
                             onGoHistory = { nav.navigate("history") },
                             onGoNewChat = { id ->
-                                vm.resetLastImage()
                                 nav.navigate("chat/$id")
                             }
                         )
                     }
+
                     composable("history") {
                         HistoryScreen(
                             repository = repo,
-                            vm = vm,
-                            onOpen = { id -> nav.navigate("retomar/$id") },
-                            onNew = { id ->
-                                vm.resetLastImage()
-                                nav.navigate("chat/$id")
-                            }
+                            onOpen = { id -> nav.navigate("chat/$id") },
+                            onNew = { id -> nav.navigate("chat/$id") },
+                            onBack = { nav.popBackStack() }   // ✅ aquí mandamos el back
                         )
                     }
-                    composable(
-                        route = "retomar/{id}",
-                        arguments = listOf(navArgument("id") { type = NavType.LongType })
-                    ) { back ->
-                        val id = back.arguments!!.getLong("id")
-                        ContinueChatScreen(
-                            sessionId = id,
-                            repository = repo,
-                            onContinue = { nav.navigate("chat/$id") },
-                            onBack = { nav.popBackStack() }
-                        )
-                    }
+
                     composable(
                         route = "chat/{id}",
                         arguments = listOf(navArgument("id") { type = NavType.LongType })
@@ -77,8 +58,7 @@ class MainActivity : ComponentActivity() {
                         ChatScreen(
                             sessionId = id,
                             repository = repo,
-                            onBack = { nav.popBackStack() },
-                            vm = vm
+                            onBack = { nav.popBackStack() }
                         )
                     }
                 }
