@@ -6,6 +6,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.example.corescanner.ChatViewModel
 import com.example.corescanner.repository.ChatRepository
 import kotlinx.coroutines.launch
 
@@ -13,6 +14,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun HomeScreen(
     repository: ChatRepository,
+    vm: ChatViewModel,
     onGoHistory: () -> Unit,
     onGoNewChat: (Long) -> Unit
 ) {
@@ -31,21 +33,25 @@ fun HomeScreen(
         ) {
             Text("¿Qué quieres escanear?", style = MaterialTheme.typography.titleLarge)
 
-
-
             Button(
                 onClick = {
                     scope.launch {
+                        vm.resetLastImage()
                         val id = repository.newSession("Nueva conversación")
                         onGoNewChat(id)
                     }
                 },
                 modifier = Modifier.fillMaxWidth()
-            ) { Text("Comenzar a escanear") }
+            ) {
+                Text("Comenzar a escanear")
+            }
+
             Button(
                 onClick = onGoHistory,
                 modifier = Modifier.fillMaxWidth()
-            ) { Text("Ver historial") }
+            ) {
+                Text("Ver historial")
+            }
         }
     }
 }

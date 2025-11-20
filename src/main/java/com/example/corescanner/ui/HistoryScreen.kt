@@ -13,16 +13,16 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.example.corescanner.ChatViewModel
 import com.example.corescanner.repository.ChatRepository
 import kotlinx.coroutines.launch
 import androidx.compose.material3.Icon
-
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryScreen(
     repository: ChatRepository,
+    vm: ChatViewModel,
     onOpen: (Long) -> Unit,
     onNew: (Long) -> Unit
 ) {
@@ -35,6 +35,7 @@ fun HistoryScreen(
             ExtendedFloatingActionButton(
                 onClick = {
                     scope.launch {
+                        vm.resetLastImage()
                         val id = repository.newSession("Nueva conversación")
                         onNew(id)
                     }

@@ -9,6 +9,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import androidx.lifecycle.viewmodel.compose.viewModel
+
 import com.example.corescanner.data.ChatDb
 import com.example.corescanner.repository.ChatRepository
 import com.example.corescanner.ui.ChatScreen
@@ -23,21 +25,36 @@ class MainActivity : ComponentActivity() {
         setContent {
             CoreScannerTheme {
                 val nav = rememberNavController()
-                val repo = remember { ChatRepository(ChatDb.get(this).chatDao()) }
+                val repo = remember {
+                    ChatRepository(
+                        applicationContext,
+                        ChatDb.get(applicationContext).chatDao()
+                    )
+                }
+
+                val vm: ChatViewModel = viewModel()
 
                 NavHost(navController = nav, startDestination = "home") {
                     composable("home") {
                         HomeScreen(
                             repository = repo,
+                            vm = vm,   // ✅ se lo pasamos al Home
                             onGoHistory = { nav.navigate("history") },
-                            onGoNewChat = { id -> nav.navigate("chat/$id") }
+                            onGoNewChat = { id ->
+                                vm.resetLastImage()
+                                nav.navigate("chat/$id")
+                            }
                         )
                     }
                     composable("history") {
                         HistoryScreen(
                             repository = repo,
+                            vm = vm,
                             onOpen = { id -> nav.navigate("retomar/$id") },
-                            onNew = { id -> nav.navigate("chat/$id") }
+                            onNew = { id ->
+                                vm.resetLastImage()
+                                nav.navigate("chat/$id")
+                            }
                         )
                     }
                     composable(
@@ -60,7 +77,8 @@ class MainActivity : ComponentActivity() {
                         ChatScreen(
                             sessionId = id,
                             repository = repo,
-                            onBack = { nav.popBackStack() }
+                            onBack = { nav.popBackStack() },
+                            vm = vm
                         )
                     }
                 }

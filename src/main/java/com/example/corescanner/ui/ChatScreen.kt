@@ -3,10 +3,11 @@ package com.example.corescanner.ui
 import android.Manifest
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -15,21 +16,18 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.corescanner.ChatViewModel
 import com.example.corescanner.repository.ChatRepository
 
@@ -39,28 +37,17 @@ fun ChatScreen(
     sessionId: Long,
     repository: ChatRepository,
     onBack: () -> Unit,
-    vm: ChatViewModel = viewModel()
+    vm: ChatViewModel
 ) {
     val isSending by vm.isSending
     val messages by repository.messages(sessionId).collectAsState(initial = emptyList())
     var text by remember { mutableStateOf("") }
     val scope = rememberCoroutineScope()
+
     var fotoTomada by remember { mutableStateOf<Bitmap?>(null) }
     var imagenGaleria by remember { mutableStateOf<Uri?>(null) }
-    val cameraLauncher = rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.TakePicturePreview()
-        ) { bitmap ->
-            if (bitmap != null) {
-                fotoTomada = bitmap
-            }
-        }
-    val galleryLauncher = rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.GetContent()
-        ) { uri: Uri? ->
-            if (uri != null) {
-                imagenGaleria = uri
-            }
-        }
+    var imagenGaleriaBitmap by remember { mutableStateOf<Bitmap?>(null) }
+
     val context = LocalContext.current
     var tienePermisoCamara by remember {
         mutableStateOf(
@@ -70,6 +57,52 @@ fun ChatScreen(
             ) == PackageManager.PERMISSION_GRANTED
         )
     }
+
+    LaunchedEffect(imagenGaleria) {
+        imagenGaleriaBitmap = imagenGaleria?.let { uri ->
+            withContext(Dispatchers.IO) {
+                try {
+                    context.contentResolver.openInputStream(uri)?.use { input ->
+                        BitmapFactory.decodeStream(input)
+                    }
+                } catch (_: Exception) {
+                    null
+                }
+            }
+        }
+    }
+
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicturePreview()
+    ) { bitmap ->
+        if (bitmap != null) {
+            fotoTomada = bitmap
+
+            scope.launch {
+                repository.addUserMessage(
+                    sessionId,
+                    "[Imagen enviada desde la cámara]"
+                )
+                vm.askWithImageFromBitmap(sessionId, bitmap, repository)
+            }
+        }
+    }
+
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            imagenGaleria = uri
+            scope.launch {
+                repository.addUserMessage(
+                    sessionId,
+                    "[Imagen seleccionada desde la galería]"
+                )
+                vm.askWithImageFromUri(sessionId, uri, repository)
+            }
+        }
+    }
+
     val requestCameraPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { granted ->
@@ -78,6 +111,7 @@ fun ChatScreen(
             cameraLauncher.launch(null)
         }
     }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -101,7 +135,6 @@ fun ChatScreen(
                                 )
                             }
                         },
-
                         modifier = Modifier.weight(1f)
                     ) {
                         Text("Sacar foto")
@@ -165,7 +198,36 @@ fun ChatScreen(
                             .widthIn(max = 320.dp)
                             .clip(RoundedCornerShape(16.dp))
                     ) {
-                        Text(m.text, modifier = Modifier.padding(12.dp))
+                        when {
+                            isUser && m.text == "[Imagen enviada desde la cámara]" && fotoTomada != null -> {
+                                Image(
+                                    bitmap = fotoTomada!!.asImageBitmap(),
+                                    contentDescription = "Foto enviada",
+                                    modifier = Modifier
+                                        .sizeIn(maxWidth = 260.dp, maxHeight = 260.dp)
+                                        .padding(6.dp),
+                                    contentScale = ContentScale.Crop
+                                )
+                            }
+
+                            isUser && m.text == "[Imagen seleccionada desde la galería]" && imagenGaleriaBitmap != null -> {
+                                Image(
+                                    bitmap = imagenGaleriaBitmap!!.asImageBitmap(),
+                                    contentDescription = "Imagen enviada",
+                                    modifier = Modifier
+                                        .sizeIn(maxWidth = 260.dp, maxHeight = 260.dp)
+                                        .padding(6.dp),
+                                    contentScale = ContentScale.Crop
+                                )
+                            }
+
+                            else -> {
+                                Text(
+                                    m.text,
+                                    modifier = Modifier.padding(12.dp)
+                                )
+                            }
+                        }
                     }
                 }
             }
