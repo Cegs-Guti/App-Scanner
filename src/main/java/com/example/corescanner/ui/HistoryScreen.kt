@@ -1,6 +1,7 @@
 package com.example.corescanner.ui
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,27 +12,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Divider
-import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.ListItemDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -46,63 +28,67 @@ fun HistoryScreen(
     repository: ChatRepository,
     onOpen: (Long) -> Unit,
     onNew: (Long) -> Unit,
-    onBack: () -> Unit          // ✅ NUEVO PARÁMETRO
+    onBack: () -> Unit
 ) {
     val sessions by repository.sessions().collectAsState(initial = emptyList())
     val scope = rememberCoroutineScope()
 
-    // --- Estado para renombrar ---
     var renameDialogSessionId by remember { mutableStateOf<Long?>(null) }
     var renameText by remember { mutableStateOf("") }
 
-    // --- Estado para selección múltiple y borrado ---
     var selectionMode by remember { mutableStateOf(false) }
     var selectedIds by remember { mutableStateOf(setOf<Long>()) }
     var showDeleteDialog by remember { mutableStateOf(false) }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
+
         topBar = {
             TopAppBar(
                 title = {
-                    if (selectionMode) {
-                        Text("${selectedIds.size} seleccionados")
-                    } else {
-                        Text("Historial de conversación")
-                    }
+                    Text(
+                        if (selectionMode)
+                            "${selectedIds.size} seleccionados"
+                        else
+                            "Historial de conversación",
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
                 },
                 navigationIcon = {
                     IconButton(
                         onClick = {
                             if (selectionMode) {
-                                // Si está en modo selección, primero la cancelamos
                                 selectionMode = false
                                 selectedIds = emptySet()
                             } else {
-                                // Si no, volvemos atrás como en ChatScreen
                                 onBack()
                             }
                         }
                     ) {
                         Icon(
                             imageVector = Icons.Default.ArrowBack,
-                            contentDescription = "Volver"
+                            contentDescription = "Volver",
+                            tint = MaterialTheme.colorScheme.onPrimary
                         )
                     }
                 },
                 actions = {
                     if (selectionMode) {
-                        IconButton(
-                            onClick = { showDeleteDialog = true }
-                        ) {
+                        IconButton(onClick = { showDeleteDialog = true }) {
                             Icon(
                                 imageVector = Icons.Default.Delete,
-                                contentDescription = "Eliminar conversación(es)"
+                                contentDescription = "Eliminar conversación(es)",
+                                tint = MaterialTheme.colorScheme.onPrimary
                             )
                         }
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary
+                )
             )
         },
+
         floatingActionButton = {
             if (!selectionMode) {
                 ExtendedFloatingActionButton(
@@ -111,13 +97,16 @@ fun HistoryScreen(
                             val id = repository.newSession("Nueva conversación")
                             onNew(id)
                         }
-                    }
+                    },
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
                 ) {
                     Text("Nueva conversación")
                 }
             }
         }
     ) { padding ->
+
         LazyColumn(
             modifier = Modifier
                 .padding(padding)
@@ -132,13 +121,17 @@ fun HistoryScreen(
                         Text(
                             s.title,
                             maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
+                            overflow = TextOverflow.Ellipsis,
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                     },
                     supportingContent = {
                         val date = java.text.SimpleDateFormat("dd MMM HH:mm")
                             .format(java.util.Date(s.updatedAt))
-                        Text(date)
+                        Text(
+                            date,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     },
                     trailingContent = {
                         if (!selectionMode) {
@@ -150,20 +143,22 @@ fun HistoryScreen(
                             ) {
                                 Icon(
                                     painter = painterResource(id = R.drawable.rename_icon),
-                                    contentDescription = "Renombrar conversación"
+                                    contentDescription = "Renombrar",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         } else {
                             Icon(
-                                imageVector = Icons.Filled.ChevronRight,
-                                contentDescription = null
+                                imageVector = Icons.Default.ChevronRight,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     },
                     colors = ListItemDefaults.colors(
                         containerColor =
                             if (isSelected)
-                                MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                                MaterialTheme.colorScheme.primary.copy(alpha = 0.20f)
                             else
                                 MaterialTheme.colorScheme.surface
                     ),
@@ -174,9 +169,7 @@ fun HistoryScreen(
                                     selectedIds =
                                         if (isSelected) selectedIds - s.id
                                         else selectedIds + s.id
-                                    if (selectedIds.isEmpty()) {
-                                        selectionMode = false
-                                    }
+                                    if (selectedIds.isEmpty()) selectionMode = false
                                 } else {
                                     onOpen(s.id)
                                 }
@@ -189,83 +182,87 @@ fun HistoryScreen(
                             }
                         )
                 )
-                Divider()
+
+                Divider(
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                )
             }
         }
     }
 
-    // --- Diálogo renombrar ---
+    // --- Diálogo: Renombrar conversación ---
     if (renameDialogSessionId != null) {
         AlertDialog(
             onDismissRequest = { renameDialogSessionId = null },
-            title = { Text("Renombrar conversación") },
+            title = {
+                Text(
+                    "Renombrar conversación",
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            },
             text = {
                 OutlinedTextField(
                     value = renameText,
                     onValueChange = { renameText = it },
                     singleLine = true,
-                    label = { Text("Nombre de la conversación") }
+                    label = { Text("Nombre", color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
                 )
             },
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        val id = renameDialogSessionId
-                        if (id != null && renameText.isNotBlank()) {
-                            scope.launch {
-                                repository.renameSession(id, renameText.trim())
-                            }
+                TextButton(onClick = {
+                    val id = renameDialogSessionId
+                    if (id != null && renameText.isNotBlank()) {
+                        scope.launch {
+                            repository.renameSession(id, renameText.trim())
                         }
-                        renameDialogSessionId = null
                     }
-                ) {
-                    Text("Guardar")
+                    renameDialogSessionId = null
+                }) {
+                    Text("Guardar", color = MaterialTheme.colorScheme.primary)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { renameDialogSessionId = null }) {
-                    Text("Cancelar")
+                    Text("Cancelar", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-            }
+            },
+            containerColor = MaterialTheme.colorScheme.surface,
+            titleContentColor = MaterialTheme.colorScheme.onSurface,
+            textContentColor = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 
-    // --- Diálogo eliminar múltiples ---
+    // --- Diálogo: Eliminar múltiples ---
     if (showDeleteDialog && selectedIds.isNotEmpty()) {
         AlertDialog(
-            onDismissRequest = {
-                showDeleteDialog = false
-            },
-            title = { Text("Eliminar conversaciones") },
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("Eliminar conversaciones", color = MaterialTheme.colorScheme.onSurface) },
             text = {
                 Text(
-                    "¿Seguro que deseas eliminar ${selectedIds.size} conversación(es)? " +
-                            "Esta acción no se puede deshacer."
+                    "¿Seguro que deseas eliminar ${selectedIds.size} conversación(es)?",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             },
             confirmButton = {
-                TextButton(
-                    onClick = {
-                        scope.launch {
-                            repository.deleteSessions(selectedIds.toList())
-                        }
-                        showDeleteDialog = false
-                        selectionMode = false
-                        selectedIds = emptySet()
-                    }
-                ) {
-                    Text("Eliminar")
+                TextButton(onClick = {
+                    scope.launch { repository.deleteSessions(selectedIds.toList()) }
+                    showDeleteDialog = false
+                    selectionMode = false
+                    selectedIds = emptySet()
+                }) {
+                    Text("Eliminar", color = MaterialTheme.colorScheme.primary)
                 }
             },
             dismissButton = {
-                TextButton(
-                    onClick = {
-                        showDeleteDialog = false
-                    }
-                ) {
-                    Text("Cancelar")
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text("Cancelar", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
-            }
+            },
+            containerColor = MaterialTheme.colorScheme.surface
         )
     }
 }

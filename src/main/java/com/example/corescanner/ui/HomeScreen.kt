@@ -5,8 +5,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.example.corescanner.ChatViewModel
 import com.example.corescanner.repository.ChatRepository
 import kotlinx.coroutines.launch
 
@@ -20,7 +20,21 @@ fun HomeScreen(
     val scope = rememberCoroutineScope()
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("CoreScanner") }) }
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = "CoreScanner",
+                        color = MaterialTheme.colorScheme.onPrimary
+                    )
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary
+                )
+            )
+        },
+        containerColor = MaterialTheme.colorScheme.background
     ) { padding ->
         Column(
             modifier = Modifier
@@ -30,8 +44,17 @@ fun HomeScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterVertically),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text("¿Qué quieres escanear?", style = MaterialTheme.typography.titleLarge)
+            Text(
+                text = "¿Qué quieres escanear?",
+                style = MaterialTheme.typography.headlineSmall,
+                color = MaterialTheme.colorScheme.onBackground,
+                textAlign = TextAlign.Center
+            )
 
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Botón principal: morado
             Button(
                 onClick = {
                     scope.launch {
@@ -39,14 +62,22 @@ fun HomeScreen(
                         onGoNewChat(id)
                     }
                 },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
             ) {
-                Text("Comenzar a escanear")
+                Text("Nueva conversación")
             }
 
-            Button(
+            // Botón secundario: estilo outlined, colores a juego
+            OutlinedButton(
                 onClick = onGoHistory,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = MaterialTheme.colorScheme.onBackground
+                )
             ) {
                 Text("Ver historial")
             }

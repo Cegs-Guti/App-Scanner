@@ -1,5 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.CoreScanner" parent="android:Theme.Material.Light.NoActionBar" />
+    <!-- Tema normal de la app -->
+    <style name="Theme.CoreScanner" parent="@android:style/Theme.Material.Light.NoActionBar">
+        <!-- Aquí podrías agregar más items si quieres, pero no es obligatorio -->
+    </style>
+
+    <!-- Tema usado SOLO durante el splash -->
+    <style name="Theme.CoreScanner.Splash" parent="@android:style/Theme.Black.NoTitleBar">
+        <!-- Fondo negro con el logo centrado -->
+        <item name="android:windowBackground">@drawable/logo_ct</item>
+    </style>
+
 </resources>

@@ -15,7 +15,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowDownward   // NUEVO
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -35,6 +34,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.corescanner.ChatViewModel
 import com.example.corescanner.R
 import com.example.corescanner.repository.ChatRepository
+
+// ⭐ imports nuevos
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -77,7 +80,7 @@ fun ChatScreen(
         }
     }
 
-    val listState = rememberLazyListState()   // usamos este estado para el scroll
+    val listState = rememberLazyListState()
 
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicturePreview()
@@ -123,21 +126,24 @@ fun ChatScreen(
         topBar = {
             TopAppBar(
                 title = { Text("Asistente IA") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, null)
-                    }
-                }
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, null) } }
             )
         },
         bottomBar = {
-            Column(Modifier.fillMaxWidth().padding(8.dp)) {
+            // ⭐ imePadding() + navigationBarsPadding()
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .imePadding()              // mueve la barra cuando aparece el teclado
+                    .navigationBarsPadding()   // evita solaparse con la barra de navegación
+                    .padding(8.dp)
+            ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
 
-                    // --- Botón Cámara ---
+                    // Botón Cámara
                     IconButton(
                         onClick = {
                             if (tienePermisoCamara) {
@@ -157,7 +163,7 @@ fun ChatScreen(
                         )
                     }
 
-                    // --- Botón Galería ---
+                    // Botón Galería
                     IconButton(
                         onClick = { galleryLauncher.launch("image/*") },
                         modifier = Modifier.size(60.dp)
@@ -169,6 +175,7 @@ fun ChatScreen(
                         )
                     }
                 }
+
                 Spacer(Modifier.height(8.dp))
                 if (isSending) LinearProgressIndicator(Modifier.fillMaxWidth())
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -188,6 +195,9 @@ fun ChatScreen(
                                     repository.addUserMessage(sessionId, t)
                                     text = ""
                                     vm.ask(sessionId, t, repository)
+
+                                    // ⭐ opcional: autoscroll al enviar
+                                    listState.animateScrollToItem(messages.size.coerceAtLeast(0))
                                 }
                             }
                         }
@@ -198,93 +208,61 @@ fun ChatScreen(
             }
         }
     ) { padding ->
-        // NUEVO: envolvemos la lista en un Box para poder poner el botón flotante encima
-        Box(
+        LazyColumn(
+            state = listState,
             modifier = Modifier
                 .padding(padding)
-                .fillMaxSize()
+                .fillMaxSize(),
+            contentPadding = PaddingValues(12.dp)
         ) {
-            LazyColumn(
-                state = listState,
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(12.dp)
-            ) {
-                items(messages) { m ->
-                    val isUser = m.role == "user"
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = if (isUser) Arrangement.End else Arrangement.Start
+            items(messages) { m ->
+                val isUser = m.role == "user"
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = if (isUser) Arrangement.End else Arrangement.Start
+                ) {
+                    Surface(
+                        color = if (isUser) MaterialTheme.colorScheme.primaryContainer
+                        else MaterialTheme.colorScheme.surfaceVariant,
+                        shadowElevation = 1.dp,
+                        tonalElevation = 1.dp,
+                        modifier = Modifier
+                            .padding(vertical = 4.dp)
+                            .widthIn(max = 320.dp)
+                            .clip(RoundedCornerShape(16.dp))
                     ) {
-                        Surface(
-                            color = if (isUser) MaterialTheme.colorScheme.primaryContainer
-                            else MaterialTheme.colorScheme.surfaceVariant,
-                            shadowElevation = 1.dp,
-                            tonalElevation = 1.dp,
-                            modifier = Modifier
-                                .padding(vertical = 4.dp)
-                                .widthIn(max = 320.dp)
-                                .clip(RoundedCornerShape(16.dp))
-                        ) {
-                            when {
-                                isUser && m.text == "[Imagen enviada desde la cámara]" && fotoTomada != null -> {
-                                    Image(
-                                        bitmap = fotoTomada!!.asImageBitmap(),
-                                        contentDescription = "Foto enviada",
-                                        modifier = Modifier
-                                            .sizeIn(
-                                                maxWidth = 260.dp,
-                                                maxHeight = 260.dp
-                                            )
-                                            .padding(6.dp),
-                                        contentScale = ContentScale.Crop
-                                    )
-                                }
+                        when {
+                            isUser && m.text == "[Imagen enviada desde la cámara]" && fotoTomada != null -> {
+                                Image(
+                                    bitmap = fotoTomada!!.asImageBitmap(),
+                                    contentDescription = "Foto enviada",
+                                    modifier = Modifier
+                                        .sizeIn(maxWidth = 260.dp, maxHeight = 260.dp)
+                                        .padding(6.dp),
+                                    contentScale = ContentScale.Crop
+                                )
+                            }
 
-                                isUser && m.text == "[Imagen seleccionada desde la galería]" && imagenGaleriaBitmap != null -> {
-                                    Image(
-                                        bitmap = imagenGaleriaBitmap!!.asImageBitmap(),
-                                        contentDescription = "Imagen enviada",
-                                        modifier = Modifier
-                                            .sizeIn(
-                                                maxWidth = 260.dp,
-                                                maxHeight = 260.dp
-                                            )
-                                            .padding(6.dp),
-                                        contentScale = ContentScale.Crop
-                                    )
-                                }
+                            isUser && m.text == "[Imagen seleccionada desde la galería]" && imagenGaleriaBitmap != null -> {
+                                Image(
+                                    bitmap = imagenGaleriaBitmap!!.asImageBitmap(),
+                                    contentDescription = "Imagen enviada",
+                                    modifier = Modifier
+                                        .sizeIn(maxWidth = 260.dp, maxHeight = 260.dp)
+                                        .padding(6.dp),
+                                    contentScale = ContentScale.Crop
+                                )
+                            }
 
-                                else -> {
-                                    Text(
-                                        m.text,
-                                        modifier = Modifier.padding(12.dp)
-                                    )
-                                }
+                            else -> {
+                                Text(
+                                    m.text,
+                                    modifier = Modifier.padding(12.dp)
+                                )
                             }
                         }
                     }
                 }
-            }
-
-            // --- Botón para ir al último mensaje (abajo a la derecha) ---
-            FloatingActionButton(
-                onClick = {
-                    scope.launch {
-                        if (messages.isNotEmpty()) {
-                            listState.animateScrollToItem(messages.size - 1)
-                        }
-                    }
-                },
-                containerColor = MaterialTheme.colorScheme.primary,
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(16.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.ArrowDownward,
-                    contentDescription = "Ir al último mensaje",
-                    tint = MaterialTheme.colorScheme.onPrimary
-                )
             }
         }
     }
