@@ -42,7 +42,6 @@ class ChatViewModel : ViewModel() {
         .build()
         .create(ApiService::class.java)
 
-
     private var lastImageDescription: String? = null
 
     fun ask(sessionId: Long, userText: String, repository: ChatRepository) {

@@ -35,7 +35,6 @@ import com.example.corescanner.ChatViewModel
 import com.example.corescanner.R
 import com.example.corescanner.repository.ChatRepository
 
-// ⭐ imports nuevos
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 
